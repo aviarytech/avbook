@@ -19,7 +19,7 @@ spec:
     taskRef:
       name: git-clone
     resources:
-      input:
+      inputs:
       - name: source
         resource: git-repo
   - name: build-image
