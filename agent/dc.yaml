@@ -1,0 +1,73 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: aries-vcr-agent
+  namespace: aviarybook
+spec:
+  selector:
+    app: aries-vcr-agent
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: aries-vcr-agent
+    spec:
+      containers:
+        - name: aries-vcr-agent
+          image: image-registry.openshift-image-registry.svc:5000/aviarybook/aries-vcr
+          command:
+          - bash
+          - -c
+          - $(echo aca-py start
+            --inbound-transport http '0.0.0.0' 8021
+            --inbound-transport ws '0.0.0.0' 8023
+            --endpoint https://aries-vcr-agent.apps.avos.aviary.link
+            --outbound-transport ws
+            --outbound-transport http
+            --genesis-url http://dev.bcovrin.vonx.io/genesis
+            --auto-accept-invites
+            --auto-accept-requests
+            --auto-ping-connection
+            --auto-respond-messages
+            --auto-respond-credential-offer
+            --auto-verify-presentation
+            --wallet-type 'indy'
+            --wallet-name "$(echo aries-vcr-wallet | tr '[:upper:]' '[:lower:]' | sed "s~-~_~g")"
+            --wallet-key "1234123412341234"
+            --wallet-storage-type "postgres_storage"
+            --wallet-storage-config "$(eval echo \"${WALLET_STORAGE_CONFIGURATION}\")"
+            --wallet-storage-creds "$(eval echo \"${WALLET_STORAGE_CREDENTIALS}\")"
+            --seed "${INDY_WALLET_SEED}"
+            --admin '0.0.0.0' 8024
+            $([ ! -z "${AGENT_ADMIN_API_KEY}" ] && echo "--admin-api-key ${AGENT_ADMIN_API_KEY}" || echo "--admin-insecure-mode")
+            --label "aries-vcr-agent-label"
+            --log-level INFO
+            ${TIMING:+--timing}
+            ${READ_ONLY_LEDGER:+--read-only-ledger}
+            --plugin indy_catalyst_issuer_registration
+            ${TRACING:+--trace}
+            ${TRACE_TARGET:+--trace-target ${TRACE_TARGET}}
+            ${TRACE_TAG:+--trace-tag ${TRACE_TAG}}
+            ${TRACE_LABEL:+--trace-label $(eval echo \"${TRACE_LABEL}\")});
+          env:
+            - name: INDY_WALLET_SEED
+              value: '0000123400001234'
+            - name: AGENT_ADMIN_API_KEY
+              value: "1234"
+            - name: POSTGRES_WALLET_HOST
+              value: REPLACEME
+            - name: POSTGRES_WALLET_PORT
+              value: '5432'
+            - name: POSTGRES_WALLET_USER
+              value: REPLACEME
+            - name: POSTGRES_WALLET_PASSWORD
+              value: REPLACEME
+            - name: POSTGRES_WALLET_ADMIN_PASSWORD
+              value: REPLACEME
+            - name: WALLET_STORAGE_CONFIGURATION
+              value: '{\"url\":\"${POSTGRESQL_WALLET_HOST}:${POSTGRESQL_WALLET_PORT}\",\"max_connections\":5}'
+            - name: WALLET_STORAGE_CREDENTIALS
+              value: '{\"account\":\"${POSTGRESQL_WALLET_USER}\",\"password\":\"${POSTGRESQL_WALLET_PASSWORD}\",\"admin_account\":\"postgres\",\"admin_password\":\"${POSTGRESQL_WALLET_ADMIN_PASSWORD}\"}'
+
+          ports:
+            - containerPort: 8024
