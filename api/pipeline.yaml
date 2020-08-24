@@ -12,14 +12,20 @@ spec:
   - name: deployment-name
     type: string
     description: name of the deployment to be patched
+  workspaces:
+  - name: pipeline-ws
   tasks:
+  - name: git-clone
+    taskRef:
+      name: git-clone
+    resources:
+      input:
+      - name: source
+        resource: git-repo
   - name: build-image
     taskRef:
       name: s2i
     resources:
-      inputs:
-      - name: source
-        resource: git-repo
       outputs:
       - name: image
         resource: image
