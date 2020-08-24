@@ -18,10 +18,9 @@ spec:
   - name: git-clone
     taskRef:
       name: git-clone
-    resources:
-      inputs:
-      - name: source
-        resource: git-repo
+    params:
+    - name: url
+      value: "$(resources.git-repo)"
   - name: build-image
     taskRef:
       name: s2i
